@@ -12,6 +12,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Charger les identifiants LinkedIn
 load_dotenv()
@@ -25,13 +26,15 @@ run = st.button("Lancer le scraping")
 if run:
     st.info("🚀 Démarrage du navigateur...")
 
-    # Configuration du navigateur
-    CHROMEDRIVER_PATH = os.path.join(os.getcwd(), "chromedriver")
-    service = Service(CHROMEDRIVER_PATH)
+    # Configuration du navigateur compatible Streamlit Cloud
     options = Options()
-    options.add_argument("--headless=new")
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--window-size=1920,1080")
-    driver = webdriver.Chrome(service=service, options=options)
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
     try:
         driver.get("https://www.linkedin.com/login")
