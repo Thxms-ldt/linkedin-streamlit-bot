@@ -38,7 +38,9 @@ if run:
 
     try:
         driver.get("https://www.linkedin.com/login")
-        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "username"))).send_keys(EMAIL)
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "username"))
+        ).send_keys(EMAIL)
         driver.find_element(By.ID, "password").send_keys(PASSWORD + Keys.RETURN)
         time.sleep(5)
         st.success("✅ Connexion réussie !")
