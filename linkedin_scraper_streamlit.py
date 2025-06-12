@@ -8,60 +8,43 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
 
-CHROME_BIN_PATH = "/usr/bin/chromium-browser"
+# 📌 Chemins par défaut sur Streamlit Cloud
+CHROME_BIN_PATH = "/usr/bin/google-chrome"
 CHROMEDRIVER_PATH = "/usr/bin/chromedriver"
 
-options = webdriver.ChromeOptions()
+# ✅ Configuration navigateur headless
+options = Options()
+options.binary_location = CHROME_BIN_PATH
 options.add_argument("--headless")
-options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 
-options.binary_location = CHROME_BIN_PATH
-service = Service(executable_path=CHROMEDRIVER_PATH)
+service = Service(CHROMEDRIVER_PATH)
 
-driver = webdriver.Chrome(service=service, options=options)
-# Charger les identifiants LinkedIn
-load_dotenv()
-EMAIL = os.getenv("LINKEDIN_EMAIL") or "TON_EMAIL_LINKEDIN"
-PASSWORD = os.getenv("LINKEDIN_PASSWORD") or "TON_MDP_LINKEDIN"
+# 🌐 Interface Streamlit
+st.title("🔍 Scraper LinkedIn (profils)")
 
-st.title("🔍 LinkedIn Profile Scraper")
-
+EMAIL = st.text_input("Adresse email LinkedIn", type="default")
+PASSWORD = st.text_input("Mot de passe LinkedIn", type="password")
 run = st.button("Lancer le scraping")
 
-if run:
-    st.info("🚀 Démarrage du navigateur...")
-
-    # Configuration du navigateur compatible Streamlit Cloud
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--window-size=1920,1080")
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+if run and EMAIL and PASSWORD:
+    st.info("Connexion à LinkedIn...")
+    driver = webdriver.Chrome(service=service, options=options)
 
     try:
         driver.get("https://www.linkedin.com/login")
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "username"))
-        ).send_keys(EMAIL)
+        driver.find_element(By.ID, "username").send_keys(EMAIL)
         driver.find_element(By.ID, "password").send_keys(PASSWORD + Keys.RETURN)
         time.sleep(5)
-        st.success("✅ Connexion réussie !")
+        st.success("Connexion réussie !")
 
         url = "https://www.linkedin.com/search/results/people/?keywords=product"
         driver.get(url)
-        time.sleep(3)
-
+        time.sleep(5)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(5)
 
@@ -96,19 +79,19 @@ if run:
                     "Lien Profil": profile_url
                 })
             except Exception as e:
-                st.warning(f"Erreur profil : {e}")
+                st.warning(f"Erreur lors de l'extraction d’un profil : {e}")
 
         if results:
             with open("profils_linkedin.csv", "w", newline='', encoding="utf-8") as f:
                 writer = csv.DictWriter(f, fieldnames=results[0].keys())
                 writer.writeheader()
                 writer.writerows(results)
-            st.success("✅ Profils extraits et enregistrés dans profils_linkedin.csv !")
+
+            st.success("✅ Profils extraits avec succès !")
             st.dataframe(results)
         else:
             st.warning("⚠️ Aucun profil détecté.")
     except Exception as e:
-        st.error(f"❌ Erreur inattendue : {e}")
+        st.error(f"❌ Erreur : {e}")
     finally:
         driver.quit()
-
